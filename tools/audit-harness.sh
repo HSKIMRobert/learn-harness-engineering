@@ -67,8 +67,10 @@ dir_exists()     { [[ -d "$REPO/$1" ]] && echo "pass" || echo "fail"; }
 any_file_match() {
   # any_file_match "pattern1" "pattern2" ...
   for pattern in "$@"; do
-    # shellcheck disable=SC2086
-    if ls $REPO/$pattern 2>/dev/null | grep -q .; then
+    # Quote "$REPO/$pattern" to prevent word-splitting / command injection (CWE-78).
+    # compgen -G does glob matching without spawning ls, so a crafted $REPO value
+    # such as "/tmp; rm -rf /" can no longer be split into a second command.
+    if compgen -G "$REPO/$pattern" > /dev/null; then
       echo "pass"; return
     fi
   done
